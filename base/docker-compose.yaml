@@ -1,0 +1,185 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+volumes:
+  orderer.nec-domain.com:
+  orderer2.nec-domain.com:
+  orderer3.nec-domain.com:
+  peer0.org1.nec-domain.com:
+  peer1.org1.nec-domain.com:
+  
+
+networks:
+  nec-network:
+
+services:
+
+  orderer.nec-domain.com:
+    extends:
+      file: base/docker-compose-base.yaml
+      service: orderer-base
+    container_name: orderer.nec-domain.com
+    volumes:
+        - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+        - ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer.nec-domain.com/msp:/var/hyperledger/orderer/msp
+        - ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer.nec-domain.com/tls:/var/hyperledger/orderer/tls
+        - ./containers/orderer.nec-domain.com:/var/hyperledger/production/orderer
+        - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ./channel-artifacts:/var/hyperledger/channel-artifacts
+    ports:
+      - 7050:7050
+    networks:
+      - nec-network
+
+  orderer2.nec-domain.com:
+    extends:
+      file: base/docker-compose-base.yaml
+      service: orderer-base
+    environment:
+      - ORDERER_GENERAL_LISTENPORT=7050
+    container_name: orderer2.nec-domain.com
+    volumes:
+        - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+        - ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer2.nec-domain.com/msp:/var/hyperledger/orderer/msp
+        - ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer2.nec-domain.com/tls:/var/hyperledger/orderer/tls
+        - ./containers/orderer2.nec-domain.com:/var/hyperledger/production/orderer
+        - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ./channel-artifacts:/var/hyperledger/channel-artifacts
+    ports:
+      - 8050:7050
+    networks:
+      - nec-network
+
+  orderer3.nec-domain.com:
+    extends:
+      file: base/docker-compose-base.yaml
+      service: orderer-base
+    environment:
+      - ORDERER_GENERAL_LISTENPORT=7050
+    container_name: orderer3.nec-domain.com
+    volumes:
+        - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+        - ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer3.nec-domain.com/msp:/var/hyperledger/orderer/msp
+        - ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer3.nec-domain.com/tls:/var/hyperledger/orderer/tls
+        - ./containers/orderer3.nec-domain.com:/var/hyperledger/production/orderer
+        - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ./channel-artifacts:/var/hyperledger/channel-artifacts
+    ports:
+      - 9050:7050
+    networks:
+      - nec-network
+
+  couchdb1org1:
+    container_name: couchdb1org1
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - '5984:5984'
+    volumes:
+      - ./persist/couchdb1org1:/opt/couchdb/data
+    networks:
+      - nec-network
+
+  peer0.org1.nec-domain.com:
+    container_name: peer0.org1.nec-domain.com
+    extends:
+      file: base/docker-compose-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer0.org1.nec-domain.com
+      - CORE_PEER_ADDRESS=peer0.org1.nec-domain.com:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.nec-domain.com:7052
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.nec-domain.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.nec-domain.com:7051
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto  
+        - ./crypto-config/ordererOrganizations/nec-domain.com/users:/var/hyperledger/users  
+        - ./crypto-config/peerOrganizations/org1.nec-domain.com/peers/peer0.org1.nec-domain.com/msp:/etc/hyperledger/fabric/msp
+        - ./crypto-config/peerOrganizations/org1.nec-domain.com/peers/peer0.org1.nec-domain.com/tls:/etc/hyperledger/fabric/tls
+        - ./containers/peer0.org1.nec-domain.com:/var/hyperledger/production
+        - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ./channel-artifacts:/var/hyperledger/channel-artifacts
+    depends_on:
+      - couchdb1org1
+    ports:
+      - 7051:7051
+      - 7052:7052
+      - 7053:7053
+    networks:
+      - nec-network
+  couchdb2org1:
+    container_name: couchdb2org1
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - '6984:5984'
+    volumes:
+      - ./persist/couchdb2org1:/opt/couchdb/data
+    networks:
+      - nec-network
+
+  peer1.org1.nec-domain.com:
+    container_name: peer1.org1.nec-domain.com
+    extends:
+      file: base/docker-compose-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer1.org1.nec-domain.com
+      - CORE_PEER_ADDRESS=peer1.org1.nec-domain.com:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer1.org1.nec-domain.com:7052
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.org1.nec-domain.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.org1.nec-domain.com:7051
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto  
+        - ./crypto-config/ordererOrganizations/nec-domain.com/users:/var/hyperledger/users  
+        - ./crypto-config/peerOrganizations/org1.nec-domain.com/peers/peer1.org1.nec-domain.com/msp:/etc/hyperledger/fabric/msp
+        - ./crypto-config/peerOrganizations/org1.nec-domain.com/peers/peer1.org1.nec-domain.com/tls:/etc/hyperledger/fabric/tls
+        - ./containers/peer1.org1.nec-domain.com:/var/hyperledger/production
+        - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ./channel-artifacts:/var/hyperledger/channel-artifacts
+    depends_on:
+      - couchdb2org1
+    ports:
+      - 7061:7051
+      - 7062:7052
+      - 7063:7053
+
+    networks:
+      - nec-network
+  
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto
+        - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ./channel-artifacts:/var/hyperledger/channel-artifacts
+        
+    depends_on:
+      - peer0.org1.nec-domain.com
+      - peer1.org1.nec-domain.com
+    networks:
+      - nec-network

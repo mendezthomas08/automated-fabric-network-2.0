@@ -1,0 +1,33 @@
+# Defines three organizations and one orderer
+#  - Orderer organization
+#  - Org1  = Two peer organization
+#  - Org2  = Two peer organization
+# SOLUTION to the exercise
+#===============================================================================
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: nec-domain.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+      - Hostname: orderer2
+      - Hostname: orderer3
+      
+#### Peers for nec-domain
+PeerOrgs:
+  # Peer configuration for nec-domain
+  - Name: Org1
+    Domain: org1.nec-domain.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: peer0
+      - Hostname: peer1
+    Users:
+      Count: 1
+
+  
+
+ 
+
+ 

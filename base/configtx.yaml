@@ -1,0 +1,205 @@
+# Updated for Fabric 2.x
+# policy.1
+# Simplified configtx.yaml
+
+#   CAPABILITIES
+Capabilities:
+    Application: &ApplicationCapabilities
+        V2_0: true
+    Orderer: &OrdererCapabilities
+        V2_0: true
+    Channel: &ChannelCapabilities
+        V2_0: true
+
+# ORGANIZATIONS
+Organizations:
+    - &OrdererOrg
+        Name: OrdererMSP
+        # SkipAsForeign: false
+        ID: OrdererMSP
+        MSPDir: ./crypto-config/ordererOrganizations/nec-domain.com/msp
+        # Policies: &OrdererPolicies
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Writers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('OrdererMSP.admin')"
+
+    - &Org1
+        Name: Org1
+        ID: Org1MSP
+        MSPDir: ./crypto-config/peerOrganizations/org1.nec-domain.com/msp
+        # Policies: &Org1Policies
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('Org1MSP.member','Org1MSP.admin')"
+            Writers:
+                Type: Signature
+                Rule: "OR('Org1MSP.member','Org1MSP.admin')"
+            Admins:
+                Type: Signature
+                Rule: "OR('Org1MSP.admin')"
+        AnchorPeers:
+            - Host: peer0.org1.nec-domain.com
+              Port: 7051
+
+    
+
+    
+
+  
+#   ORDERER
+Orderer: &OrdererDefaults
+
+    OrdererType: etcdraft
+    
+    Addresses:
+        - orderer.nec-domain.com:7050
+        - orderer2.nec-domain.com:7050
+        - orderer3.nec-domain.com:7050
+    EtcdRaft:
+        Consenters:
+        - Host: orderer.nec-domain.com
+          Port: 7050
+          ClientTLSCert: ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer.nec-domain.com/tls/server.crt
+          ServerTLSCert: ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer.nec-domain.com/tls/server.crt
+        - Host: orderer2.nec-domain.com
+          Port: 7050
+          ClientTLSCert: ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer2.nec-domain.com/tls/server.crt
+          ServerTLSCert: ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer2.nec-domain.com/tls/server.crt
+        - Host: orderer3.nec-domain.com
+          Port: 7050
+          ClientTLSCert: ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer3.nec-domain.com/tls/server.crt
+          ServerTLSCert: ./crypto-config/ordererOrganizations/nec-domain.com/orderers/orderer3.nec-domain.com/tls/server.crt
+
+    # Policies for Orderer
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta  
+            Rule: "ANY Admins"
+            # Rule: "MAJORITY Admins"
+
+        # BlockValidation specifies what signatures must be included in the block
+        # from the orderer for the peer to validate it.
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+  # Batch Timeout: The amount of time to wait before creating a batch
+    BatchTimeout: 2s
+
+    # Batch Size: Controls the number of messages batched into a block
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 98 MB
+        PreferredMaxBytes: 512 KB
+
+    Capabilities:
+         <<: *OrdererCapabilities
+
+
+Application: &ApplicationDefaults
+
+  
+    # Default policies
+    Policies:
+        
+        # --channel-config-policy
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "ANY Endorsement"
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "ANY Admins"
+
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+    Organizations:
+ 
+
+#   CHANNEL
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "ANY Admins"
+
+    Capabilities:
+        <<: *ChannelCapabilities
+ 
+#   PROFILES
+Profiles:
+  
+    NecOrdererGenesis:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+               - *OrdererOrg
+            Capabilities:
+               <<: *OrdererCapabilities
+        Consortiums:
+             SampleConsortium:
+                Organizations:
+                   - *Org1
+                   
+
+    NecChannel:
+        Consortium: NecConsortium
+        <<: *ChannelDefaults
+            
+        Application:
+            <<: *ApplicationDefaults         
+            Organizations:
+                - *Org1
+            Capabilities:
+                <<: *ApplicationCapabilities
+  
+    NecMultiNodeEtcdRaft:
+        <<: *ChannelDefaults
+        Capabilities:
+            <<: *ChannelCapabilities
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+            - *OrdererOrg
+            Capabilities:
+                <<: *OrdererCapabilities
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+            - <<: *OrdererOrg
+        Consortiums:
+                NecConsortium:
+                   Organizations:
+                     - *Org1
+  
+
+
+
+

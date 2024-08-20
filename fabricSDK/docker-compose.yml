@@ -1,0 +1,14 @@
+version: "2.1"
+
+networks:
+    default:
+     external: 
+         name: nec-network
+
+services:
+  api:
+    image: api:1.0
+    build: .
+    ports:
+      - 4000:4000
+         
